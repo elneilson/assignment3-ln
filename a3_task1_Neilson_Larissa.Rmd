@@ -1,5 +1,5 @@
 ---
-title: "Visualizing Oil Spill Incidents in California"
+title: "Visualizing Oil Spill Incidents in California (2008)"
 author: "Larissa Neilson"
 date: "2/21/2021"
 output:
@@ -38,7 +38,7 @@ oil_spill <- read_sf(here("Oil_Spill_Incident_Tracking","Oil_Spill_Incident_Trac
 # Checked CRS in console
 ```
 
-### Interactive tmap showing oil spill incidents in California
+### Interactive tmap showing the oil spill incidents in California
 
 ```{r}
 # Make exploratory tmap
@@ -47,10 +47,12 @@ oil_spill <- read_sf(here("Oil_Spill_Incident_Tracking","Oil_Spill_Incident_Trac
 tmap_mode(mode = "view")
 
 tm_shape(ca_subset) +
-  tm_fill("land_area", palette = "Blues") +
+  tm_fill() +
   tm_shape(oil_spill) +
   tm_dots()
 ```
+
+**Figure 1.** Inland oil spill incidents in California (2008). Most spills are concentrated in central and southern California.
 
 ### Chloropeth showing the counts of oil spill incidents by county
 
@@ -63,11 +65,13 @@ ca_oil_spill <- ca_subset %>%
 oil_spill_counts <- ca_oil_spill %>% 
   count(county_name)
 
-# Make chloropeth map
+# Make chloropleth map
 ggplot(data = oil_spill_counts) +
   geom_sf(aes(fill = n), color = "white", size = 0.1) +
   scale_fill_gradientn(colors = c("lightyellow", "orange", "red")) +
-  theme_minimal() +
+  theme_void() +
   labs(fill = "Number of Oil Spill Incidents")
 ```
+
+**Figure 2.** Chloropleth map showing the number of oil spill incidents by county in 2008. Los Angeles county seems to have the highest number of oil spills incidents.
 
