@@ -26,9 +26,10 @@ ca_counties <- read_sf(here("ca_counties", "CA_Counties_TIGER2016.shp"))
 ```{r}
 ca_cetaceans <- stack(cetacean_files)
 #ca_cetaceans <- calc(ca_cetaceans, fun = mean, na.rm = FALSE)
+ca_cetaceans
 
 is_present <- function(x, thresh = .6) {
-  y <- ifelse(x >= thresh, 1, TRUE)
+  y <- ifelse(x >= thresh, 1, NA)
   return(y)
 }
 
@@ -46,16 +47,25 @@ coast
 cetaceans_df <- raster::rasterToPoints(ca_cetaceans) %>%
   as.data.frame()
 
+cetacean_longer <- cetaceans_df %>% 
+   pivot_longer(
+   cols = Balaenoptera_acutorostrata:Ziphius_cavirostris,
+   names_to = "species",
+   values_to = "value")
+
+cetacean_presence <- cetacean_longer %>% 
+  mutate(species_rich = case_when(
+    value >= 0.6 ~ value))
+
 presence_df <- raster::rasterToPoints(presence) %>% 
   as.data.frame()
 
-ggplot(data = cetaceans_df, aes(x = x, y = y)) +
+ggplot(data = cetacean_presence, aes(x = x, y = y, fill = species_rich)) +
   geom_raster() +
   geom_raster(data = presence_df, fill = 'blue') +
   coord_sf(expand = 0) +
   scale_fill_gradient(low = 'black', high = 'white') +
   theme_void() +
   theme(panel.background = element_rect(fill = 'slateblue4'))
-
 ```
 
