@@ -1,0 +1,61 @@
+---
+title: "Exploring Cetacean Species Richness in CA"
+author: "Larissa Neilson"
+date: "2/21/2021"
+output:
+  html_document:
+    code_folding: hide
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(raster)
+library(tidyverse)
+library(here)
+library(sf)
+library(fasterize)
+library(rnaturalearth)
+```
+
+```{r}
+cetacean_files <- list.files(path = here("ca_cetaceans"), pattern = ".tif", all.files = TRUE, full.names = TRUE)
+
+ca_counties <- read_sf(here("ca_counties", "CA_Counties_TIGER2016.shp"))
+```
+
+```{r}
+ca_cetaceans <- stack(cetacean_files)
+#ca_cetaceans <- calc(ca_cetaceans, fun = mean, na.rm = FALSE)
+
+is_present <- function(x, thresh = .6) {
+  y <- ifelse(x >= thresh, 1, TRUE)
+  return(y)
+}
+
+presence <- calc(ca_cetaceans, fun = is_present)
+plot(presence, col = 'green4')
+```
+
+```{r}
+coast <- ne_download(scale = 110, type = "coastline", category = "physical")
+coast
+```
+
+```{r}
+# Map it
+cetaceans_df <- raster::rasterToPoints(ca_cetaceans) %>%
+  as.data.frame()
+
+presence_df <- raster::rasterToPoints(presence) %>% 
+  as.data.frame()
+
+ggplot(data = cetaceans_df, aes(x = x, y = y)) +
+  geom_raster() +
+  geom_raster(data = presence_df, fill = 'blue') +
+  coord_sf(expand = 0) +
+  scale_fill_gradient(low = 'black', high = 'white') +
+  theme_void() +
+  theme(panel.background = element_rect(fill = 'slateblue4'))
+
+```
+
