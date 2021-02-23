@@ -1,0 +1,131 @@
+---
+title: "Text Analysis of 'The Fellowship of the Ring'"
+author: "Larissa Neilson"
+date: "2/21/2021"
+output:
+  html_document:
+    code_folding: hide
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = TRUE,
+  message = FALSE,
+  warning = FALSE)
+
+library(tidyverse)
+library(tidytext)
+library(textdata)
+library(pdftools)
+library(ggwordcloud)
+```
+
+```{r, cache = TRUE}
+# Import pdf text & wrangle
+fotr_text <- pdf_text("fotr.pdf")
+
+fotr_tidy <- data.frame(fotr_text) %>% 
+  mutate(text_full = str_split(fotr_text, pattern = '\\n')) %>% 
+  unnest(text_full) %>% 
+  mutate(text_full = str_trim(text_full)) 
+
+fotr_df <- fotr_tidy %>% 
+  slice(-(1:831)) %>% 
+  mutate(chapter = case_when(
+    str_detect(text_full, "Chapter") ~ text_full,
+    TRUE ~ NA_character_
+  )) %>% 
+  fill(chapter) %>% 
+  separate(col = chapter, into = c("ch", "no"), sep = " ") %>% 
+  mutate(chapter = as.numeric(no))
+```
+
+```{r}
+# Get tokens
+fotr_tokens <- fotr_df %>% 
+  unnest_tokens(word, text_full) %>% 
+  select(-fotr_text)
+
+fotr_wordcount <- fotr_tokens %>% 
+  count(chapter, word)
+```
+
+```{r}
+fotr_nonstop_words <- fotr_tokens %>% 
+  anti_join(stop_words)
+
+nonstop_counts <- fotr_nonstop_words %>% 
+  count(chapter, word)
+```
+
+### Most frequent words
+
+```{r}
+ch1_top100 <- nonstop_counts %>% 
+  filter(chapter == 1) %>% 
+  arrange(-n) %>% 
+  slice(1:100)
+
+ch1_cloud <- ggplot(data = ch1_top100, aes(label = word)) +
+  geom_text_wordcloud(aes(color = n, size = n), shape = "diamond") +
+  scale_size_area(max_size = 6) +
+  scale_color_gradientn(colors = c("darkgreen","blue","purple")) +
+  theme_minimal()
+
+ch1_cloud
+```
+
+```{r}
+# Fix to remove duplicate words
+top100 <- nonstop_counts %>% 
+  arrange(-n) %>% 
+  slice(1:100)
+
+top100_cloud <- ggplot(data = top100, aes(label = word)) +
+  geom_text_wordcloud(aes(color = n, size = n), shape = "diamond") +
+  scale_size_area(max_size = 6) +
+  scale_color_gradientn(colors = c("darkgreen","blue","purple")) +
+  theme_minimal()
+
+top100_cloud
+```
+
+### Sentiment Analysis
+
+```{r}
+fotr_afinn <- fotr_nonstop_words %>% 
+  inner_join(get_sentiments("afinn"))
+
+afinn_counts <- fotr_afinn %>% 
+  count(chapter, value)
+
+# Plot them: 
+ggplot(data = afinn_counts, aes(x = value, y = n)) +
+  geom_col() +
+  facet_wrap(~chapter)
+
+# Find the mean afinn score by chapter: 
+afinn_means <- fotr_afinn %>% 
+  group_by(chapter) %>% 
+  summarize(mean_afinn = mean(value))
+
+ggplot(data = afinn_means, 
+       aes(x = fct_rev(as.factor(chapter)), 
+           y = mean_afinn)) +
+  geom_col() +
+  coord_flip()
+```
+
+```{r}
+fotr_nrc <- fotr_nonstop_words %>% 
+  inner_join(get_sentiments("nrc"))
+
+fotr_nrc_counts <- fotr_nrc %>% 
+  count(chapter, sentiment)
+
+ggplot(data = fotr_nrc_counts, aes(x = sentiment, y = n)) +
+  geom_col() +
+  facet_wrap(~chapter) +
+  coord_flip()
+```
+
