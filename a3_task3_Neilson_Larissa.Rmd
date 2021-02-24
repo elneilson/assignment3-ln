@@ -1,5 +1,5 @@
 ---
-title: "Text Analysis of 'The Fellowship of the Ring'"
+title: "Text Analysis: 'The Fellowship of the Ring'"
 author: "Larissa Neilson"
 date: "2/21/2021"
 output:
@@ -18,6 +18,10 @@ library(tidytext)
 library(textdata)
 library(pdftools)
 library(ggwordcloud)
+library(pacman)
+library(grid)
+library(plyr)
+library(dplyr)
 ```
 
 ```{r, cache = TRUE}
@@ -47,7 +51,7 @@ fotr_tokens <- fotr_df %>%
   select(-fotr_text)
 
 fotr_wordcount <- fotr_tokens %>% 
-  count(chapter, word)
+  dplyr::count(chapter, word)
 ```
 
 ```{r}
@@ -55,12 +59,32 @@ fotr_nonstop_words <- fotr_tokens %>%
   anti_join(stop_words)
 
 nonstop_counts <- fotr_nonstop_words %>% 
-  count(chapter, word)
+  dplyr::count(chapter, word)
 ```
 
 ### Most frequent words
 
 ```{r}
+# Wrange to get top 5 words
+top_5_words <- nonstop_counts %>% 
+  group_by(chapter) %>% 
+  arrange(-n) %>% 
+  slice(1:5) %>% 
+  drop_na()
+
+# Graph it
+ggplot(data = top_5_words, aes(x = fct_reorder(word, n), y = n)) +
+  geom_col(fill = "lightblue", color = "lightblue4") +
+  facet_wrap(~chapter, scales = "free") +
+  coord_flip() +
+  labs(x = NULL, y = "Word count") +
+  theme_minimal()
+```
+
+**Figure 1.**
+
+```{r, include = FALSE}
+# Word clouds! (not to be included)
 ch1_top100 <- nonstop_counts %>% 
   filter(chapter == 1) %>% 
   arrange(-n) %>% 
@@ -73,22 +97,51 @@ ch1_cloud <- ggplot(data = ch1_top100, aes(label = word)) +
   theme_minimal()
 
 ch1_cloud
-```
 
-```{r}
-# Fix to remove duplicate words
-top100 <- nonstop_counts %>% 
+ch12_top100 <- nonstop_counts %>% 
+  filter(chapter == 12) %>% 
   arrange(-n) %>% 
   slice(1:100)
 
-top100_cloud <- ggplot(data = top100, aes(label = word)) +
+ch12_cloud <- ggplot(data = ch12_top100, aes(label = word)) +
   geom_text_wordcloud(aes(color = n, size = n), shape = "diamond") +
   scale_size_area(max_size = 6) +
   scale_color_gradientn(colors = c("darkgreen","blue","purple")) +
   theme_minimal()
 
+ch12_cloud
+```
+
+```{r}
+# Fix to remove duplicate words
+top100 <- nonstop_counts %>%
+  group_by(chapter) %>%
+  plyr::ddply("word", numcolwise(sum)) %>%  
+  arrange(-n) %>% 
+  slice(1:100)
+
+top100_words <- top100 %>% 
+  select(word, n)
+
+# Read in image
+ring <- png::readPNG("ring.png")
+
+# Top 100 words!
+top100_cloud <- ggplot(data = top100_words, aes(label = word)) +
+  theme(panel.background = element_rect(fill = "black")) +
+  annotation_custom(rasterGrob(ring, 
+                               width = unit(1,"npc"), 
+                               height = unit(1,"npc")), 
+                               -Inf, Inf, -Inf, Inf) +
+  geom_text_wordcloud(aes(color = n, size = n), shape = "circle") +
+  scale_size_area(max_size = 6) +
+  scale_color_gradientn(colors = c("orange","red","darkred"))
+  
+
 top100_cloud
 ```
+
+**Figure 2.**
 
 ### Sentiment Analysis
 
@@ -97,31 +150,30 @@ fotr_afinn <- fotr_nonstop_words %>%
   inner_join(get_sentiments("afinn"))
 
 afinn_counts <- fotr_afinn %>% 
-  count(chapter, value)
-
-# Plot them: 
-ggplot(data = afinn_counts, aes(x = value, y = n)) +
-  geom_col() +
-  facet_wrap(~chapter)
+  dplyr::count(chapter, value)
 
 # Find the mean afinn score by chapter: 
 afinn_means <- fotr_afinn %>% 
-  group_by(chapter) %>% 
-  summarize(mean_afinn = mean(value))
+  dplyr::group_by(chapter) %>% 
+  dplyr::summarize(mean_afinn = mean(value))
 
 ggplot(data = afinn_means, 
        aes(x = fct_rev(as.factor(chapter)), 
            y = mean_afinn)) +
   geom_col() +
-  coord_flip()
+  coord_flip() +
+  labs(x = "Chapter", y = "Mean afinn value") +
+  theme_minimal()
 ```
 
-```{r}
+**Figure 3.**
+
+```{r, include = FALSE}
 fotr_nrc <- fotr_nonstop_words %>% 
   inner_join(get_sentiments("nrc"))
 
 fotr_nrc_counts <- fotr_nrc %>% 
-  count(chapter, sentiment)
+  dplyr::count(chapter, sentiment)
 
 ggplot(data = fotr_nrc_counts, aes(x = sentiment, y = n)) +
   geom_col() +
