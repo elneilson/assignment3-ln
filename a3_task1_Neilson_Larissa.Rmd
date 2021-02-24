@@ -12,6 +12,7 @@ knitr::opts_chunk$set(
   echo = TRUE,
   warning = FALSE,
   message = FALSE)
+
 library(tidyverse)
 library(here)
 library(sf)
@@ -28,14 +29,14 @@ ca_subset <- ca_counties %>%
   select(NAME, ALAND) %>% 
   rename(county_name = NAME, land_area = ALAND)
 
-# Checked CRS in console
+# Check CRS in console
 ```
 
 ```{r}
 # Read in oil spill data
 oil_spill <- read_sf(here("Oil_Spill_Incident_Tracking","Oil_Spill_Incident_Tracking_%5Bds394%5D.shp"))
 
-# Checked CRS in console
+# Check CRS in console
 ```
 
 ### Interactive tmap showing the oil spill incidents in California
@@ -54,7 +55,7 @@ tm_shape(ca_subset) +
 
 **Figure 1.** Inland oil spill incidents in California (2008). Most spills are concentrated in central and southern California.
 
-### Chloropeth showing the counts of oil spill incidents by county
+### Chloropleth map showing the counts of oil spill incidents by county
 
 ```{r}
 # Join datasets

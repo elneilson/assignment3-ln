@@ -65,7 +65,7 @@ nonstop_counts <- fotr_nonstop_words %>%
 ### Most frequent words
 
 ```{r}
-# Wrange to get top 5 words
+# Wrangle to get top 5 words
 top_5_words <- nonstop_counts %>% 
   group_by(chapter) %>% 
   arrange(-n) %>% 
@@ -78,10 +78,11 @@ ggplot(data = top_5_words, aes(x = fct_reorder(word, n), y = n)) +
   facet_wrap(~chapter, scales = "free") +
   coord_flip() +
   labs(x = NULL, y = "Word count") +
+  ggtitle("Top 5 words") +
   theme_minimal()
 ```
 
-**Figure 1.**
+**Figure 1.** Top five words in each chapter of *The Fellowship of the Ring*. "Frodo" is almost always the most frequent word of each chapter.
 
 ```{r, include = FALSE}
 # Word clouds! (not to be included)
@@ -141,7 +142,7 @@ top100_cloud <- ggplot(data = top100_words, aes(label = word)) +
 top100_cloud
 ```
 
-**Figure 2.**
+**Figure 2.** Top 100 words in the *Fellowship of the Ring* text. "Frodo" is the most common word in the book (n = 1028) which aligns with the results from Figure 1.
 
 ### Sentiment Analysis
 
@@ -160,13 +161,14 @@ afinn_means <- fotr_afinn %>%
 ggplot(data = afinn_means, 
        aes(x = fct_rev(as.factor(chapter)), 
            y = mean_afinn)) +
-  geom_col() +
+  geom_col(show.legend = FALSE) +
   coord_flip() +
   labs(x = "Chapter", y = "Mean afinn value") +
+  ggtitle("Sentiment analysis using the afinn lexicon") +
   theme_minimal()
 ```
 
-**Figure 3.**
+**Figure 3.** Sentiment analysis with the AFINN lexicon. Mean AFINN values for each of the 12 chapters. The majority of the words in this book are associated with a negative mean AFINN value, indicating that most words are negative to some extent.
 
 ```{r, include = FALSE}
 fotr_nrc <- fotr_nonstop_words %>% 
@@ -181,3 +183,6 @@ ggplot(data = fotr_nrc_counts, aes(x = sentiment, y = n)) +
   coord_flip()
 ```
 
+#### Text citation:
+
+Tolkien, J. R. R. (1991). *The Fellowship of the Ring*. HarperCollins.

@@ -1,5 +1,5 @@
 ---
-title: "Exploring Cetacean Species Richness in CA"
+title: "Exploring Cetacean Species Richness in California"
 author: "Larissa Neilson"
 date: "2/21/2021"
 output:
@@ -12,6 +12,7 @@ knitr::opts_chunk$set(
   echo = TRUE,
   message = FALSE,
   warning = FALSE)
+
 library(raster)
 library(tidyverse)
 library(here)
@@ -19,6 +20,7 @@ library(sf)
 library(fasterize)
 library(rnaturalearth)
 ```
+
 
 ```{r}
 # Read in all cetacean .tif files
@@ -45,6 +47,8 @@ presence1 <- calc(presence, fun = sum, na.rm = TRUE)
 coastline10 <- ne_download(scale = 10, type = "coastline", category = "physical", returnclass = "sf")
 ```
 
+### Species richness
+
 ```{r}
 # Not shown because a message would persist in my knitted html; this was my code to download the CA coast sf:
 
@@ -59,7 +63,7 @@ ggplot() +
 geom_raster(data = cetaceans_df, aes(x = x, y = y, fill = layer)) +
   geom_sf(data = coastline10) +
   coord_sf(xlim = c(-125, -115), ylim = c(32, 38)) +
-  scale_fill_gradient(low = "white", high = "blue") +
+  scale_fill_gradient(low = NA, high = "blue") +
   labs(x = "Longitude", y = "Latitude") +
   labs(fill = "# of cetacean species") +
   ggtitle("Cetacean Species Richness on California's Coast") +
@@ -67,7 +71,7 @@ geom_raster(data = cetaceans_df, aes(x = x, y = y, fill = layer)) +
   theme(panel.background = element_rect(fill = 'white'))
 ```
 
-**Figure 1.** Cetacean species richness. Species richness was calculated using a probability threshold of >= 0.6, indicating values at which a species is considered to be present. Raster stack was converted into a data frame and plotted over an outline of California's coast (data provided from the `rnaturalearth` package). Cetacean species richness seems to be highest in California's southern coast.
+**Figure 1.** Cetacean species richness. Species richness was calculated using a probability threshold of >= 0.6, indicating values at which a species is considered to be present. Raster stack was converted into a data frame and plotted over an outline of California's coast (data from the `rnaturalearth` package). Cetacean species richness seems to be highest in California's southern coast.
 
 ### Data citation
 
